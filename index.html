@@ -125,6 +125,7 @@ footer{padding:26px 0 54px;font-size:13px;color:var(--ink2)}
     <label for="coment">¿Algo que quieras comentar? <span style="font-weight:400;color:var(--ink2)">(opcional)</span></label>
     <textarea id="coment" maxlength="400"></textarea>
     <div class="actions"><button class="btn" id="votar" type="button" disabled>Votar</button></div>
+    <p class="hint"><b>La votación cierra el jueves 29 de octubre a las 12:00 m. (hora de Colombia).</b></p>
     <p class="msg" id="msg" role="status"></p>
   </div>
 </section>
@@ -209,7 +210,7 @@ footer{padding:26px 0 54px;font-size:13px;color:var(--ink2)}
     $('#rlist').innerHTML = rows.map(v => `<li>${LETRAS[v.letras]} · ${esc(NOMBRE[v.paleta] || v.paleta)} · ${v.version === 'Bicolor' ? 'Dos colores' : 'Un color'}</li>`).join('');
     const n = r.n;
     $('#res').hidden = false;
-    $('#rn').textContent = n ? `${n} voto${n === 1 ? '' : 's'} hasta ahora. Se actualiza solo cada 30 segundos.` : 'Todavía no hay votos.';
+    $('#rn').textContent = CERRADA ? `La votación cerró el jueves 29 de octubre a las 12:00 m. (hora de Colombia). Resultado final: ${n} voto${n === 1 ? '' : 's'}.` : n ? `${n} voto${n === 1 ? '' : 's'} hasta ahora. Se actualiza solo cada 30 segundos.` : 'Todavía no hay votos.';
     if (n) {
       const L = top(r.L)[0], V = top(r.V)[0] === 'Bicolor' ? 'B' : 'M', p = PAL.find(x => x.id === top(r.P)[0]);
       $('#rwin').innerHTML = `<div class="win"><div style="background:${p.papel}">${logo(L, V, p)}</div><div style="background:${p.tinta};margin-top:8px">${logo(L, V, p, true)}</div><p>Lo más votado, junto: ${LETRAS[L]} · ${esc(p.nombre)} · ${VERS[V]}</p></div>`;
@@ -223,6 +224,7 @@ footer{padding:26px 0 54px;font-size:13px;color:var(--ink2)}
   const cargar = () => fetch(API + '?select=id,letras,version,paleta&order=id', {headers: HDR, cache: 'no-store'})
     .then(r => r.ok ? r.json() : Promise.reject(r.status)).then(rows => verResultados(agg(rows), rows)).catch(() => {});
   $('#votar').addEventListener('click', () => {
+    if (Date.now() >= CIERRE) return location.reload();
     if (enviando || !st.letras || !st.paleta) return;
     enviando = true; render();
     $('#msg').className = 'msg'; $('#msg').textContent = 'Registrando tu voto…';
@@ -247,8 +249,10 @@ footer{padding:26px 0 54px;font-size:13px;color:var(--ink2)}
         $('#msg').textContent = 'Ese correo ya registró un voto. Abajo ves cómo va la votación.'; cargar();
       });
   });
+  const CIERRE = Date.parse('2026-10-29T12:00:00-05:00'), CERRADA = Date.now() >= CIERRE;
   (loc => {
-    if ((loc.parameter || {}).ver === 'resultados') { document.body.classList.add('solo-res'); $('h1').textContent = 'Así va la votación del logo'; $('#hres').hidden = true; cargar(); return; }
+    if (CERRADA) loc.parameter.ver = 'resultados';
+    if ((loc.parameter || {}).ver === 'resultados') { document.body.classList.add('solo-res'); $('h1').textContent = CERRADA ? 'Resultado de la votación del logo' : 'Así va la votación del logo'; $('#hres').hidden = true; cargar(); return; }
     let ya = false; try { ya = localStorage.getItem('ingenevo_voto') === '1'; } catch (e) {}
     if (ya) { $('#msg').textContent = 'Ya registraste tu voto desde este dispositivo. Abajo ves cómo va.'; enviando = true; $('#votar').textContent = 'Voto registrado'; cargar(); }
   })({parameter: Object.fromEntries(new URLSearchParams(location.search))});
