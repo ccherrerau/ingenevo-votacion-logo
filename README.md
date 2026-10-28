@@ -11,6 +11,7 @@ Página pública para votar por la nueva imagen de INGENEVO. Se elige un tipo de
 - Cada voto exige un correo, y la base acepta un solo voto por correo, sin distinguir mayúsculas ni espacios. El correo no se verifica y nunca se publica.
 - La página pide la lista completa de votos (número, letras, versión y color) y calcula los conteos en el navegador. La lista se puede ver en «Ver todos los votos».
 - **Cierre: jueves 29 de octubre de 2026 a las 12:00 m. (hora de Colombia).** Lo impone la propia base de datos: desde esa hora rechaza cualquier voto nuevo, aunque alguien tenga la página abierta. Después del cierre la página solo muestra el resultado final.
+- **28 de octubre de 2026: se unieron Índigo intenso e Índigo profundo.** Tenían el mismo color de marca (#3122B8) y solo cambiaba el tono de acento. Los 2 votos que había por Índigo intenso se pasaron a Índigo profundo, y la página ya no muestra Índigo intenso. Si alguien vota Índigo intenso desde una página abierta antes del cambio, la base de datos guarda el voto como Índigo profundo.
 - Todo el código está en `index.html`. No hay otro servidor ni otro código.
 
 ## Qué permite la llave pública de la página
