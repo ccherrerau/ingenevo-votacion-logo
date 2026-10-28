@@ -64,6 +64,23 @@ textarea{min-height:84px;resize:vertical}
 .win p{margin:10px 0 0;font:14px 'IBM Plex Mono',monospace;color:var(--ink2)}
 .solo-res section:not(#res),.solo-res .steps,.solo-res header .lead{display:none}
 .combo{margin-top:26px}
+.wins{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.split{display:flex;gap:2px;height:28px}
+.split b,.split i{min-width:0;border-radius:4px}
+.split b,.sl .ka{background:var(--ink)}
+.split i,.sl .kb{background:#8C949A}
+.sl{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:14px}
+.sl u{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.cblk{grid-column:1/-1}
+.cols{display:flex;gap:8px}
+.col{flex:1;min-width:0;text-align:center}
+.col .plot{height:150px;display:flex;flex-direction:column;justify-content:flex-end;border-bottom:1px solid var(--line)}
+.col b{display:block;border-radius:4px 4px 0 0;background:var(--c)}
+.col .v{font:600 15px 'IBM Plex Mono',monospace;margin-bottom:4px}
+.col .v small{display:block;font-weight:400;font-size:11px;color:var(--ink2)}
+.col .t{display:block;font-size:12px;line-height:1.25;margin-top:6px;color:var(--ink2);overflow-wrap:anywhere}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .col b{background:var(--cd)}}
+:root[data-theme="dark"] .col b{background:var(--cd)}
 .audit{margin-top:22px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
 .audit summary{cursor:pointer;padding:12px 16px;font-weight:600}
 .audit .in{padding:0 16px 12px;max-height:340px;overflow:auto}
@@ -207,6 +224,17 @@ footer{padding:26px 0 54px;font-size:13px;color:var(--ink2)}
     rows.forEach(v => { r.n++; r.L[v.letras] = (r.L[v.letras] || 0) + 1; r.V[v.version] = (r.V[v.version] || 0) + 1; r.P[v.paleta] = (r.P[v.paleta] || 0) + 1; });
     return r;
   }
+  const pct = (v, n) => n ? Math.round(v / n * 100) : 0;
+  function split(title, cnt, names, n) {
+    const [ka, kb] = Object.keys(names), a = cnt[ka] || 0, b = cnt[kb] || 0;
+    return `<div class="blk"><h3>${title}</h3><div class="split"><b style="flex-grow:${a}" title="${esc(names[ka])}: ${a} · ${pct(a, n)}%"></b><i style="flex-grow:${b}" title="${esc(names[kb])}: ${b} · ${pct(b, n)}%"></i></div>` +
+      `<div class="sl"><span><u class="ka"></u><strong>${esc(names[ka])}</strong> ${a} · ${pct(a, n)}%</span><span><u class="kb"></u><strong>${esc(names[kb])}</strong> ${b} · ${pct(b, n)}%</span></div></div>`;
+  }
+  function cols(cnt, n) {
+    const ps = PAL.filter(p => cnt[p.id]).sort((x, y) => cnt[y.id] - cnt[x.id]), cero = PAL.filter(p => !cnt[p.id]), max = Math.max(1, ...ps.map(p => cnt[p.id]));
+    return `<div class="blk cblk"><h3>Color</h3><div class="cols">${ps.map(p => `<div class="col" title="${esc(p.nombre)}: ${cnt[p.id]} · ${pct(cnt[p.id], n)}%"><div class="plot"><span class="v">${cnt[p.id]}<small>${pct(cnt[p.id], n)}%</small></span><b style="height:${cnt[p.id] / max * 100}%;--c:${p.marca};--cd:${p.oscuro}"></b></div><span class="t">${esc(p.nombre)}</span></div>`).join('')}</div>` +
+      (cero.length ? `<p class="hint">Sin votos: ${cero.map(p => esc(p.nombre)).join(', ')}.</p>` : '') + '</div>';
+  }
   function verResultados(r, rows) {
     $('#rsum').textContent = `Ver todos los votos (${rows.length})`;
     const cmb = {}, cmbN = {};
@@ -218,11 +246,12 @@ footer{padding:26px 0 54px;font-size:13px;color:var(--ink2)}
     $('#res').hidden = false;
     $('#rn').textContent = CERRADA ? `La votación cerró el jueves 29 de octubre a las 12:00 m. (hora de Colombia). Resultado final: ${n} voto${n === 1 ? '' : 's'}.` : n ? `${n} voto${n === 1 ? '' : 's'} hasta ahora. Se actualiza solo cada 30 segundos.` : 'Todavía no hay votos.';
     if (n) {
-      const L = top(r.L)[0], V = top(r.V)[0] === 'Bicolor' ? 'B' : 'M', p = PAL.find(x => x.id === top(r.P)[0]);
-      $('#rwin').innerHTML = `<div class="win"><div style="background:${p.papel}">${logo(L, V, p)}</div><div style="background:${p.tinta};margin-top:8px">${logo(L, V, p, true)}</div><p>Lo más votado, junto: ${LETRAS[L]} · ${esc(p.nombre)} · ${VERS[V]}</p></div>`;
+      const max = Math.max(...Object.values(cmb)), win = Object.keys(cmb).filter(k => cmb[k] === max);
+      $('#rwin').innerHTML = (win.length > 1 ? `<p class="q"><strong>Empate entre ${win.length} combinaciones</strong> con ${max} voto${max === 1 ? '' : 's'} cada una.</p>` : '') +
+        `<div class="wins">${win.map(k => { const [L, Vx, P] = k.split('|'), V = Vx === 'Bicolor' ? 'B' : 'M', p = PAL.find(x => x.id === P);
+          return `<div class="win"><div style="background:${p.papel}">${logo(L, V, p)}</div><div style="background:${p.tinta};margin-top:8px">${logo(L, V, p, true)}</div><p>Combinación más votada: ${esc(cmbN[k])} · ${max} voto${max === 1 ? '' : 's'}</p></div>`; }).join('')}</div>`;
     } else $('#rwin').innerHTML = '';
-    $('#rbars').innerHTML = bars('Letras', r.L, LETRAS, n) + bars('Versión', r.V, {Monocromo: 'Un color', Bicolor: 'Dos colores'}, n) +
-      bars('Color', r.P, Object.fromEntries(PAL.map(p => [p.id, p.nombre])), n, k => PAL.find(p => p.id === k).marca);
+    $('#rbars').innerHTML = split('Letras', r.L, LETRAS, n) + split('Versión', r.V, {Monocromo: 'Un color', Bicolor: 'Dos colores'}, n) + cols(r.P, n);
     if (!timer) timer = setInterval(cargar, 30000);
   }
   const fallo = e => { enviando = false; render(); $('#msg').className = 'msg err'; $('#msg').textContent = 'No se pudo conectar. Revisa tu conexión e intenta de nuevo.'; };
